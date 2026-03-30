@@ -61,7 +61,7 @@ def analyze_video_with_gemini(video_path, api_key, custom_prompt, status_box):
 # --- 2. 개별 클립 '번개 미리보기' 생성 엔진 ---
 def create_fast_preview(data, output_path, status_box, font_path, font_size, text_color, stroke_color, stroke_width, y_pos_percent):
     try:
-        PREVIEW_W, PREVIEW_H = 360, 640 
+        PREVIEW_W, PREVIEW_H = 270, 480 
         status_box.info("⚡ 빠른 미리보기 영상을 생성 중입니다...")
         
         clip = VideoFileClip(data['path']).subclipped(data['start'], data['end'])
@@ -69,8 +69,9 @@ def create_fast_preview(data, output_path, status_box, font_path, font_size, tex
         w, h = clip.size
         resized = clip.resized(width=PREVIEW_W) if w > h else clip.resized(height=PREVIEW_H)
         
-        preview_font_size = int(font_size * 0.66)
-        preview_stroke_width = max(1, int(stroke_width * 0.66)) if stroke_width > 0 else 0
+        # 💡 도화지가 작아졌으니, 글자 크기와 테두리도 그 비율에 맞춰 더 작게(0.5) 줄여줍니다.
+        preview_font_size = int(font_size * 0.5)
+        preview_stroke_width = max(1, int(stroke_width * 0.5)) if stroke_width > 0 else 0
         
         txt_kwargs = {
             "text": data['subtitle'] + "\n", # 💡 마법의 투명 방석 추가

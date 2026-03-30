@@ -150,13 +150,13 @@ def render_final_video(clips_data, output_path, status_box, font_path, font_size
 # --- 4. Streamlit UI 구성 ---
 st.set_page_config(page_title="진짜 AI 숏츠 워크스테이션", layout="wide")
 
+# 💡 화면에 그리지 않고, 파이썬이 뒤에서 조용히 열쇠만 꺼내옵니다.
+user_api_key = st.secrets["GEMINI_API_KEY"]
+
 with st.sidebar:
-    st.header("🔑 AI 연동 설정")
-    # 💡 비밀 금고에서 'GEMINI_API_KEY'라는 이름의 열쇠를 꺼내오라고 명령합니다.
-    user_api_key = st.secrets["GEMINI_API_KEY"]
-    st.success("✅ 안전한 비밀 금고에서 API 키를 불러왔습니다!")
-    
-    st.markdown("---")
+    # API 관련 UI는 전부 지우고 바로 자막 설정부터 시작합니다!
+    st.header("🎨 자막 스타일 설정")
+    # ... (생략) ...
     st.header("🎨 자막 스타일 설정")
     font_dict = {
         "기본 폰트": "myfont.ttf" # 👈 다운받아서 폴더에 넣은 폰트 이름

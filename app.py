@@ -149,7 +149,7 @@ def render_final_video(clips_data, output_path, status_box, font_path, font_size
         return False
 
 # --- 4. Streamlit UI 구성 ---
-st.set_page_config(page_title="진짜 AI 숏츠 워크스테이션", layout="wide")
+st.set_page_config(page_title="Minorious Short Maker", layout="wide")
 
 # 💡 화면에 그리지 않고, 파이썬이 뒤에서 조용히 열쇠만 꺼내옵니다.
 user_api_key = st.secrets["GEMINI_API_KEY"]

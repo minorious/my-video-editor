@@ -78,7 +78,8 @@ def create_fast_preview(data, output_path, status_box, font_path, font_size, tex
         preview_stroke_width = max(1, int(stroke_width * 0.66)) if stroke_width > 0 else 0
         
         txt_kwargs = {
-            "text": data['subtitle'], "font": font_path, "font_size": preview_font_size,
+            "text": data['subtitle'] + "\n", # 💡 마법의 투명 방석 추가
+            "font": font_path, "font_size": preview_font_size,
             "color": text_color, "size": (PREVIEW_W - 30, None), "method": "caption"
         }
         if stroke_width > 0:
@@ -116,9 +117,10 @@ def render_final_video(clips_data, output_path, status_box, font_path, font_size
             resized = clip.resized(width=TARGET_W) if w / h > TARGET_W / TARGET_H else clip.resized(height=TARGET_H)
             
             txt_kwargs = {
-                "text": data['subtitle'], "font": font_path, "font_size": hd_font_size,
-                "color": text_color, "size": (TARGET_W - 100, None), "method": "caption"
-            }
+            "text": data['subtitle'] + "\n", # 💡 마법의 투명 방석 추가
+            "font": font_path, "font_size": hd_font_size,
+            "color": text_color, "size": (TARGET_W - 100, None), "method": "caption"
+        }
             if hd_stroke_width > 0:
                 txt_kwargs["stroke_color"] = stroke_color
                 txt_kwargs["stroke_width"] = hd_stroke_width

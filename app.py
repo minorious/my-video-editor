@@ -198,7 +198,7 @@ st.title("🎬 숏츠 편집하기(Made by minorious)")
 up_files = st.file_uploader("동영상 파일 업로드", type=["mp4", "mov"], accept_multiple_files=True)
 
 # 💡 [신규] 사용자가 프롬프트를 마음대로 수정할 수 있는 입력창 추가!
-default_prompt = "이 영상에서 가장 시선을 끄는 흥미로운 5초 이하의 하이라이트 구간을 찾고, 아주 자극적이고 재미있는 숏츠용 자막(10자 내외)을 하나 작성해 줘."
+default_prompt = "이 영상에서 핵심 정보가 가장 잘 전달되는 5초 이하의 중요한 구간을 찾고, 시청자가 내용을 쉽게 이해할 수 있도록 차분하고 명확한 요약 자막(15자 내외)을 하나 작성해 줘."
 user_custom_prompt = st.text_area("🧠 AI에게 내릴 특별한 지시사항 (프롬프트 커스텀)", value=default_prompt, height=80)
 
 if st.button("🔍 1단계: AI 자동 분석 시작"):

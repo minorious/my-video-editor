@@ -171,7 +171,7 @@ st.title("🎬 숏츠 편집하기(Made by minorious)")
 
 up_files = st.file_uploader("동영상 파일 업로드", type=["mp4", "mov"], accept_multiple_files=True)
 
-default_prompt = "이 영상에서 핵심 정보가 잘 전달되는 5초 이하의 구간을 찾고 차분한 요약 자막을 써줘."
+default_prompt = "이 영상에서 핵심 정보가 잘 전달되는 5초 이하의 구간을 찾고 그 구간을 선정해서 차분한 말투로 요약된 자막을 써줘."
 user_custom_prompt = st.text_area("🧠 AI 지시사항", value=default_prompt, height=80)
 
 if st.button("🔍 1단계: AI 자동 분석 시작"):

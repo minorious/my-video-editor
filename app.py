@@ -235,18 +235,18 @@ for i, c in enumerate(st.session_state.clips):
         if not c.get('is_image'):
             s, e = st.slider(f"구간", 0.0, c['total'], (c['start'], c['end']), key=f"range_{i}")
             st.session_state.clips[i]['start'], st.session_state.clips[i]['end'] = s, e
-                sub = st.text_area("자막", value=c['subtitle'], key=f"sub_{i}")
-                st.session_state.clips[i]['subtitle'] = sub
-                if st.button(f"▶️ 미리보기", key=f"btn_{i}"):
-                    p_path = f"prev_{int(time.time())}_{i}.mp4"
-                    create_fast_preview(st.session_state.clips[i], p_path, st.empty(), global_font_path, global_font_size, global_text_color, global_stroke_color, global_stroke_width, global_y_pos_percent)
-                    st.session_state.clips[i]['preview_path'] = p_path
-                if st.session_state.clips[i].get('preview_path'):
-                    # 💡 [핵심] 양옆에 1만큼의 빈 공간, 가운데에 3만큼의 영상 공간을 할당합니다.
-                    # 숫자를 조절해서 [1, 2, 1]로 하면 영상이 더 작아집니다!
-                    space_left, video_col, space_right = st.columns([1, 3, 1])
-                    with video_col:
-                        st.video(st.session_state.clips[i]['preview_path'])
+            sub = st.text_area("자막", value=c['subtitle'], key=f"sub_{i}")
+            st.session_state.clips[i]['subtitle'] = sub
+            if st.button(f"▶️ 미리보기", key=f"btn_{i}"):
+                p_path = f"prev_{int(time.time())}_{i}.mp4"
+                create_fast_preview(st.session_state.clips[i], p_path, st.empty(), global_font_path, global_font_size, global_text_color, global_stroke_color, global_stroke_width, global_y_pos_percent)
+                st.session_state.clips[i]['preview_path'] = p_path
+            if st.session_state.clips[i].get('preview_path'):
+                # 💡 [핵심] 양옆에 1만큼의 빈 공간, 가운데에 3만큼의 영상 공간을 할당합니다.
+                # 숫자를 조절해서 [1, 2, 1]로 하면 영상이 더 작아집니다!
+                space_left, video_col, space_right = st.columns([1, 3, 1])
+                with video_col:
+                    st.video(st.session_state.clips[i]['preview_path'])
 
         if st.button("🚀 최종 숏츠 완성하기", use_container_width=True):
             out_p = f"final_{int(time.time())}.mp4"

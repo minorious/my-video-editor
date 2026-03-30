@@ -24,8 +24,8 @@ def analyze_video_with_gemini(video_path, api_key, custom_prompt, status_box):
         if video_file.state.name == "FAILED":
             raise ValueError("영상 처리 실패")
 
-        # 💡 [수정] 모델명은 2026년 기준 2.0-flash가 최신 주력입니다. (2.5는 아직 공식 SDK 명칭이 아님)
-        model = genai.GenerativeModel(model_name="gemini-2.0-flash")
+        # 💡 [수정] 모델명은 2026년 기준 2.5-flash가 최신 주력입니다. (2.5는 아직 공식 SDK 명칭이 아님)
+        model = genai.GenerativeModel(model_name="gemini-2.5-flash")
         
         prompt = f"""
         당신은 전문 유튜브 숏츠 편집자입니다. 첨부된 영상을 끝까지 시청하세요.

@@ -233,8 +233,8 @@ for i, c in enumerate(st.session_state.clips):
 
     with st.expander(f"⚙️ 상세 설정", expanded=False):
         if not c.get('is_image'):
-                s, e = st.slider(f"구간", 0.0, c['total'], (c['start'], c['end']), key=f"range_{i}")
-                    st.session_state.clips[i]['start'], st.session_state.clips[i]['end'] = s, e
+            s, e = st.slider(f"구간", 0.0, c['total'], (c['start'], c['end']), key=f"range_{i}")
+            st.session_state.clips[i]['start'], st.session_state.clips[i]['end'] = s, e
                 sub = st.text_area("자막", value=c['subtitle'], key=f"sub_{i}")
                 st.session_state.clips[i]['subtitle'] = sub
                 if st.button(f"▶️ 미리보기", key=f"btn_{i}"):

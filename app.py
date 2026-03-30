@@ -6,7 +6,7 @@ import traceback
 import json
 
 # 💡 [신규] 구글 AI 라이브러리 불러오기
-import google.generativeai as genai
+from google import genai
 
 # --- 1. [핵심] 진짜 구글 Gemini AI 엔진 ---
 def analyze_video_with_gemini(video_path, api_key, custom_prompt, status_box):

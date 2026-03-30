@@ -23,7 +23,7 @@ def analyze_video_with_gemini(video_path, api_key, custom_prompt, status_box):
         if video_file.state.name == "FAILED":
             raise ValueError("영상 처리 실패")
 
-        model = genai.GenerativeModel(model_name="gemini-1.5-flash")
+        model = genai.GenerativeModel(model_name="gemini-2.5-flash")
         
         # 💡 [핵심] 파이썬이 에러 나지 않게 형식을 강제하면서, 사용자의 명령을 중간에 끼워 넣습니다!
         prompt = f"""

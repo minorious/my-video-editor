@@ -1,5 +1,5 @@
 import streamlit as st
-from moviepy import VideoFileClip, ColorClip, CompositeVideoClip, TextClip, concatenate_videoclips
+from moviepy import VideoFileClip, ColorClip, CompositeVideoClip, TextClip, concatenate_videoclips, ImageClip
 import os
 import time
 import traceback
@@ -9,52 +9,46 @@ import json
 import google.generativeai as genai
 
 # --- 1. [핵심] 진짜 구글 Gemini AI 엔진 ---
-def analyze_video_with_gemini(video_path, api_key, custom_prompt, status_box):
+def analyze_video_with_gemini(file_path, api_key, custom_prompt, status_box):
     try:
-        status_box.info("🤖 AI가 영상을 시청하며 분석 중입니다... (약 10~30초 소요)")
-        # 💡 [확인] 이 방식은 google-generativeai 패키지 전용입니다.
+        # 파일 확장자 확인
+        is_image = file_path.lower().endswith(('.png', '.jpg', '.jpeg'))
+        type_str = "사진" if is_image else "영상"
+        
+        status_box.info(f"🤖 AI가 {type_str}을 분석 중입니다...")
         genai.configure(api_key=api_key)
         
-        video_file = genai.upload_file(path=video_path)
+        # 파일 업로드 (이미지/영상 모두 지원)
+        myfile = genai.upload_file(path=file_path)
         
-        while video_file.state.name == "PROCESSING":
+        while myfile.state.name == "PROCESSING":
             time.sleep(2)
-            video_file = genai.get_file(video_file.name)
-            
-        if video_file.state.name == "FAILED":
-            raise ValueError("영상 처리 실패")
+            myfile = genai.get_file(myfile.name)
 
-        # 💡 [수정] 모델명은 2026년 기준 2.5-flash가 최신 주력입니다. (2.5는 아직 공식 SDK 명칭이 아님)
         model = genai.GenerativeModel(model_name="gemini-2.5-flash")
         
-        prompt = f"""
-        당신은 전문 유튜브 숏츠 편집자입니다. 첨부된 영상을 끝까지 시청하세요.
-        아래 [사용자 특별 요청사항]을 가장 우선적으로 반영하여 5초 이하의 하이라이트 구간을 찾고 자막을 작성하세요.
+        # 이미지일 경우 '시간' 개념이 없으므로 프롬프트를 분기합니다.
+        if is_image:
+            prompt = f"""
+            첨부된 사진을 분석하여 아래 [요청사항]에 맞는 숏츠용 자막을 작성하세요.
+            [요청사항]: "{custom_prompt}"
+            🚨 [JSON 형식 필수]: {{"start": 0, "end": 2, "subtitle": "추천 자막"}}
+            """
+        else:
+            prompt = f"""
+            첨부된 영상을 분석하여 하이라이트 구간과 자막을 작성하세요.
+            [요청사항]: "{custom_prompt}"
+            🚨 [JSON 형식 필수]: {{"start": 시작초, "end": 종료초, "subtitle": "추천 자막"}}
+            """
         
-        [사용자 특별 요청사항]
-        "{custom_prompt}"
-        
-        ---
-        🚨 [절대 규칙] 반드시 아래의 JSON 형식으로만 대답하세요. 마크다운(```)이나 설명은 절대 쓰지 마세요.
-        {{
-            "start": 시작시간(초, 예: 2.5),
-            "end": 종료시간(초, 예: 7.5),
-            "subtitle": "여기에 요청사항을 반영한 추천 자막 작성"
-        }}
-        """
-        
-        response = model.generate_content([video_file, prompt])
-        genai.delete_file(video_file.name)
+        response = model.generate_content([myfile, prompt])
+        genai.delete_file(myfile.name)
         
         raw_text = response.text.replace("```json", "").replace("```", "").strip()
-        result = json.loads(raw_text)
-        
-        return result
+        return json.loads(raw_text)
 
     except Exception as e:
-        error_msg = f"🚨 AI 통신 에러 발생: {e}"
-        status_box.error(error_msg)
-        st.stop()
+        status_box.error(f"🚨 AI 분석 에러: {e}"); st.stop()
 
 # --- 2. 개별 클립 '번개 미리보기' 생성 엔진 ---
 def create_fast_preview(data, output_path, status_box, font_path, font_size, text_color, stroke_color, stroke_width, y_pos_percent):
@@ -101,8 +95,12 @@ def render_final_video(clips_data, output_path, status_box, font_path, font_size
         hd_stroke_width = stroke_width * 2
 
         for i, data in enumerate(clips_data):
-            status_box.info(f"⏳ [{i+1}/{len(clips_data)}] 고화질 클립 병합 중: {data['name']}")
-            clip = VideoFileClip(data['path']).subclipped(data['start'], data['end']).with_fps(30)
+    if data.get("is_image"):
+        # 💡 이미지를 2초짜리 영상 클립으로 변환
+        clip = ImageClip(data['path']).with_duration(data['end'] - data['start']).with_fps(30)
+    else:
+        # 기존 영상 클립 처리
+        clip = VideoFileClip(data['path']).subclipped(data['start'], data['end']).with_fps(30)
             bg = ColorClip(size=(TARGET_W, TARGET_H), color=(0, 0, 0)).with_duration(clip.duration)
             w, h = clip.size
             resized = clip.resized(width=TARGET_W) if w / h > TARGET_W / TARGET_H else clip.resized(height=TARGET_H)
@@ -178,18 +176,33 @@ if st.button("🔍 1단계: AI 자동 분석 시작"):
     if up_files:
         st.session_state.clips = []
         uid = int(time.time())
-        status_box = st.empty() 
+        status_box = st.empty()
+        
         for i, f in enumerate(up_files):
-            tmp_p = f"temp_{uid}_{i}.mp4"
+            tmp_p = f"temp_{uid}_{i}_{f.name}"
             with open(tmp_p, "wb") as out: out.write(f.getbuffer())
+            
             ai_res = analyze_video_with_gemini(tmp_p, user_api_key, user_custom_prompt, status_box)
-            with VideoFileClip(tmp_p) as v:
-                dur = v.duration
-                s, e = min(ai_res['start'], dur - 1.0), min(ai_res['end'], dur)
-                st.session_state.clips.append({"path": tmp_p, "name": f.name, "total": dur, "start": s, "end": e, "subtitle": ai_res['subtitle'], "preview_path": None})
-        status_box.success("✅ AI 분석 완료!")
-        st.session_state.analyzed = True
-        st.rerun()
+            
+            # 💡 [핵심] 이미지 파일일 경우 처리 로직
+            if tmp_p.lower().endswith(('.png', '.jpg', '.jpeg')):
+                duration = 2.0 # 💡 말씀하신 2초 설정
+                st.session_state.clips.append({
+                    "path": tmp_p, "name": f.name, "total": duration,
+                    "start": 0.0, "end": duration, 
+                    "subtitle": ai_res['subtitle'], "preview_path": None,
+                    "is_image": True # 이미지임을 표시
+                })
+            else:
+                # 영상 파일 처리 (기존 로직)
+                with VideoFileClip(tmp_p) as v:
+                    dur = v.duration
+                    st.session_state.clips.append({
+                        "path": tmp_p, "name": f.name, "total": dur,
+                        "start": ai_res['start'], "end": ai_res['end'], 
+                        "subtitle": ai_res['subtitle'], "preview_path": None,
+                        "is_image": False
+                    })
 
 if st.session_state.analyzed:
     col_left, col_right = st.columns([1, 1.2])

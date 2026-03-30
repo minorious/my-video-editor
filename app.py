@@ -59,7 +59,7 @@ def analyze_video_with_gemini(video_path, api_key, custom_prompt, status_box):
         st.stop()
 
 # --- 2. 개별 클립 '번개 미리보기' 생성 엔진 ---
-def create_fast_preview(data, output_path, status_box, font_path, font_size, text_color, stroke_color, stroke_width):
+def create_fast_preview(data, output_path, status_box, font_path, font_size, text_color, stroke_color, stroke_width, y_pos_percent):
     try:
         PREVIEW_W, PREVIEW_H = 360, 640 
         status_box.info("⚡ 빠른 미리보기 영상을 생성 중입니다...")
@@ -82,7 +82,12 @@ def create_fast_preview(data, output_path, status_box, font_path, font_size, tex
             txt_kwargs["stroke_width"] = preview_stroke_width
 
         txt = TextClip(**txt_kwargs).with_duration(clip.duration)
-        final_clip = CompositeVideoClip([bg, resized.with_position("center"), txt.with_position(("center", PREVIEW_H - 100))])
+        
+        # 💡 [핵심] 정중앙(0%)을 기준으로 픽셀 위치를 계산하는 공식
+        final_y = (PREVIEW_H / 2) + (PREVIEW_H * (y_pos_percent / 100))
+        
+        # 💡 [수정] 기존에 PREVIEW_H - 100 으로 고정되어 있던 위치를 final_y 로 바꿉니다.
+        final_clip = CompositeVideoClip([bg, resized.with_position("center"), txt.with_position(("center", final_y))])
         
         final_clip.write_videofile(
             output_path, fps=15, codec="libx264", audio_codec="aac", preset="ultrafast", logger=None, ffmpeg_params=["-pix_fmt", "yuv420p"]
@@ -96,7 +101,7 @@ def create_fast_preview(data, output_path, status_box, font_path, font_size, tex
         return False
 
 # --- 3. 최종 비디오 합성 엔진 (FHD) ---
-def render_final_video(clips_data, output_path, status_box, font_path, font_size, text_color, stroke_color, stroke_width):
+def render_final_video(clips_data, output_path, status_box, font_path, font_size, text_color, stroke_color, stroke_width, y_pos_percent):
     try:
         processed_clips = []
         TARGET_W, TARGET_H = 1080, 1920 
@@ -121,7 +126,12 @@ def render_final_video(clips_data, output_path, status_box, font_path, font_size
                 txt_kwargs["stroke_width"] = hd_stroke_width
 
             txt = TextClip(**txt_kwargs).with_duration(clip.duration)
-            final_clip = CompositeVideoClip([bg, resized.with_position("center"), txt.with_position(("center", TARGET_H - 300))])
+            
+            # 💡 [핵심] 고화질(1920) 해상도에 맞춘 위치 계산
+            final_y = (TARGET_H / 2) + (TARGET_H * (y_pos_percent / 100))
+            
+            # 💡 [수정] 기존 TARGET_H - 300 대신 final_y 로 바꿉니다.
+            final_clip = CompositeVideoClip([bg, resized.with_position("center"), txt.with_position(("center", final_y))])
             processed_clips.append(final_clip)
 
         status_box.info("🚀 고화질 전체 영상 렌더링 중... (화질을 높여 시간이 조금 더 걸립니다)")
@@ -170,13 +180,20 @@ with st.sidebar:
     global_text_color = color_dict[sel_text_color_kor]
     global_stroke_color = color_dict[sel_stroke_color_kor]
     
+    # 기존에 있던 색상 및 크기 설정 코드 아래에 이어서 작성합니다.
     global_font_size = st.slider("글자 크기", 20, 80, 45, step=1)
     global_stroke_width = st.slider("테두리 두께", 0, 10, 3, step=1) 
+    
+    # 💡 [신규] 자막 세로 위치 조절 슬라이더 추가
+    st.markdown("---")
+    st.subheader("📍 자막 위치")
+    global_y_pos_percent = st.slider("세로 위치 (정중앙 0%)", -45, 45, 30, step=1, format="%d%%")
+    st.caption("음수(-)는 위로, 양수(+)는 아래로 이동합니다.")
 
 if 'clips' not in st.session_state: st.session_state.clips = []
 if 'analyzed' not in st.session_state: st.session_state.analyzed = False
 
-st.title("🎬 AI 숏츠 편집 워크스테이션 (Gemini 연동)")
+st.title("🎬 숏츠 편집하기(Made by minorious)")
 
 up_files = st.file_uploader("동영상 파일 업로드", type=["mp4", "mov"], accept_multiple_files=True)
 
@@ -228,11 +245,13 @@ if st.session_state.analyzed:
                 total_final_dur += (e - s)
                 
                 preview_status = st.empty()
+                # [미리보기 버튼 부분 수정]
                 if st.button(f"▶️ 이 클립만 미리보기 생성", key=f"prev_btn_{i}"):
                     prev_path = f"fast_preview_{int(time.time())}_{i}.mp4"
+                    # 맨 끝에 global_y_pos_percent 추가!
                     if create_fast_preview(st.session_state.clips[i], prev_path, preview_status, 
                                            global_font_path, global_font_size, 
-                                           global_text_color, global_stroke_color, global_stroke_width):
+                                           global_text_color, global_stroke_color, global_stroke_width, global_y_pos_percent):
                         st.session_state.clips[i]['preview_path'] = prev_path
                 
                 if st.session_state.clips[i].get('preview_path') and os.path.exists(st.session_state.clips[i]['preview_path']):
@@ -241,12 +260,14 @@ if st.session_state.analyzed:
         st.divider()
         st.write(f"📊 **예상 총 재생 시간:** {total_final_dur:.2f}초")
         
+        # [최종 완성 버튼 부분 수정]
         if st.button("🚀 2단계: 최종 숏츠 완성하기", use_container_width=True):
             s_box = st.empty()
             out_p = f"final_output_{int(time.time())}.mp4"
+            # 맨 끝에 global_y_pos_percent 추가!
             if render_final_video(st.session_state.clips, out_p, s_box, 
                                   global_font_path, global_font_size, 
-                                  global_text_color, global_stroke_color, global_stroke_width):
+                                  global_text_color, global_stroke_color, global_stroke_width, global_y_pos_percent):
                 st.session_state.final_video_path = out_p
                 st.success("완성되었습니다! 왼쪽 미리보기를 확인하세요.")
                 st.rerun()

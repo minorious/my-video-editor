@@ -6,10 +6,13 @@ import traceback
 import json
 import google.generativeai as genai
 
+# 💡 [여기 추가됨] 사진 방향을 잡아주기 위한 새로운 준비물 2개
+from PIL import Image, ImageOps
+import numpy as np
+
 # --- 1. [핵심] 진짜 구글 Gemini AI 엔진 ---
 def analyze_video_with_gemini(file_path, api_key, custom_prompt, status_box, progress_bar):
     try:
-        # 이미지 여부 확인
         is_image = file_path.lower().endswith(('.png', '.jpg', '.jpeg'))
         
         progress_bar.progress(10, text="📡 구글 AI 서버에 연결 중...")
@@ -28,7 +31,6 @@ def analyze_video_with_gemini(file_path, api_key, custom_prompt, status_box, pro
         progress_bar.progress(90, text="📝 자막과 하이라이트를 작성하는 중...")
         model = genai.GenerativeModel(model_name="gemini-2.5-flash")
 
-        # 프롬프트 분기
         if is_image:
             prompt = f"""
             첨부된 사진을 분석하여 아래 [요청사항]에 맞는 숏츠용 자막을 작성하세요.
@@ -62,7 +64,10 @@ def create_fast_preview(data, output_path, status_box, font_path, font_size, tex
         status_box.info("⚡ 빠른 미리보기 생성 중...")
         
         if data.get("is_image"):
-            clip = ImageClip(data['path']).with_duration(data['end'] - data['start'])
+            # 💡 [여기 추가됨] 스마트폰 사진이 눕지 않게 똑바로 세워주는 마법의 코드
+            img = Image.open(data['path'])
+            img = ImageOps.exif_transpose(img) # 사진의 원래 방향(세로)을 찾아줍니다!
+            clip = ImageClip(np.array(img)).with_duration(data['end'] - data['start'])
         else:
             clip = VideoFileClip(data['path']).subclipped(data['start'], data['end'])
             
@@ -105,7 +110,10 @@ def render_final_video(clips_data, output_path, status_box, font_path, font_size
 
         for i, data in enumerate(clips_data):
             if data.get("is_image"):
-                clip = ImageClip(data['path']).with_duration(data['end'] - data['start']).with_fps(30)
+                # 💡 [여기 추가됨] 최종 완성본을 만들 때도 사진을 똑바로 세워줍니다!
+                img = Image.open(data['path'])
+                img = ImageOps.exif_transpose(img)
+                clip = ImageClip(np.array(img)).with_duration(data['end'] - data['start']).with_fps(30)
             else:
                 clip = VideoFileClip(data['path']).subclipped(data['start'], data['end']).with_fps(30)
             

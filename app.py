@@ -213,17 +213,23 @@ if st.session_state.analyzed:
     with col_right:
         st.subheader("✂️ 순서 및 편집")
         for i, c in enumerate(st.session_state.clips):
-            cols = st.columns([0.1, 0.1, 0.1, 0.7])
-            if cols[0].button("🔼", key=f"up_{i}") and i > 0:
-                st.session_state.clips[i], st.session_state.clips[i-1] = st.session_state.clips[i-1], st.session_state.clips[i]
-                st.rerun()
-            if cols[1].button("🔽", key=f"down_{i}") and i < len(st.session_state.clips) - 1:
-                st.session_state.clips[i], st.session_state.clips[i+1] = st.session_state.clips[i+1], st.session_state.clips[i]
-                st.rerun()
-            if cols[2].button("🗑️", key=f"del_{i}"):
-                st.session_state.clips.pop(i)
-                st.rerun()
-            cols[3].write(f"**{i+1}:** {c['name']}")
+    # 💡 비율을 0.2씩 공평하게 배분
+    cols = st.columns([0.2, 0.2, 0.2, 1.0])
+    
+    # 각 버튼에 use_container_width=True 추가
+    if cols[0].button("🔼", key=f"up_{i}", use_container_width=True) and i > 0:
+        st.session_state.clips[i], st.session_state.clips[i-1] = st.session_state.clips[i-1], st.session_state.clips[i]
+        st.rerun()
+    
+    if cols[1].button("🔽", key=f"down_{i}", use_container_width=True) and i < len(st.session_state.clips) - 1:
+        st.session_state.clips[i], st.session_state.clips[i+1] = st.session_state.clips[i+1], st.session_state.clips[i]
+        st.rerun()
+
+    if cols[2].button("🗑️", key=f"del_{i}", use_container_width=True):
+        st.session_state.clips.pop(i)
+        st.rerun()
+
+    cols[3].write(f"**{i+1}:** {c['name']}")
 
             with st.expander(f"⚙️ 상세 설정", expanded=False):
                 if not c.get('is_image'):

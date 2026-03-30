@@ -206,24 +206,55 @@ if st.button("🔍 1단계: AI 자동 분석 시작"):
 
 if st.session_state.analyzed:
     col_left, col_right = st.columns([1, 1.2])
+
     with col_right:
-        st.subheader("✂️ 개별 클립 정밀 편집")
-        total_final_dur = 0
+        st.subheader("✂️ 개별 클립 순서 및 정밀 편집")
+        
+        # 💡 [핵심] 리스트 순서 변경 및 삭제 로직
+        new_order = list(range(len(st.session_state.clips)))
+        
         for i, c in enumerate(st.session_state.clips):
-            with st.expander(f"클립 #{i+1}: {c['name']}", expanded=True):
-                s, e = st.slider(f"구간", 0.0, c['total'], (c['start'], c['end']), key=f"range_{i}")
-                st.session_state.clips[i]['start'], st.session_state.clips[i]['end'] = s, e
+            # 클립 하나당 한 줄의 버튼 모음 만들기
+            cols = st.columns([0.1, 0.1, 0.1, 0.7])
+            
+            # 위로 이동 버튼
+            if cols[0].button("🔼", key=f"up_{i}") and i > 0:
+                st.session_state.clips[i], st.session_state.clips[i-1] = st.session_state.clips[i-1], st.session_state.clips[i]
+                st.rerun()
+            
+            # 아래로 이동 버튼
+            if cols[1].button("🔽", key=f"down_{i}") and i < len(st.session_state.clips) - 1:
+                st.session_state.clips[i], st.session_state.clips[i+1] = st.session_state.clips[i+1], st.session_state.clips[i]
+                st.rerun()
+
+            # 삭제 버튼
+            if cols[2].button("🗑️", key=f"del_{i}"):
+                st.session_state.clips.pop(i)
+                st.rerun()
+
+            # 현재 순서 표시
+            cols[3].write(f"**{i+1}번 슬롯:** {c['name']} ({'사진' if c.get('is_image') else '영상'})")
+
+            # 기존 편집창 (Expander)
+            with st.expander(f"⚙️ {i+1}번 상세 설정", expanded=False):
+                if not c.get('is_image'):
+                    s, e = st.slider(f"구간", 0.0, c['total'], (c['start'], c['end']), key=f"range_{i}")
+                    st.session_state.clips[i]['start'], st.session_state.clips[i]['end'] = s, e
+                
                 sub = st.text_area("자막 수정", value=c['subtitle'], key=f"sub_{i}")
                 st.session_state.clips[i]['subtitle'] = sub
-                total_final_dur += (e - s)
+                
                 p_status = st.empty()
                 if st.button(f"▶️ 미리보기 생성", key=f"btn_{i}"):
                     p_path = f"prev_{int(time.time())}_{i}.mp4"
-                    if create_fast_preview(st.session_state.clips[i], p_path, p_status, global_font_path, global_font_size, global_text_color, global_stroke_color, global_stroke_width, global_y_pos_percent):
-                        st.session_state.clips[i]['preview_path'] = p_path
+                    create_fast_preview(st.session_state.clips[i], p_path, p_status, 
+                                        global_font_path, global_font_size, 
+                                        global_text_color, global_stroke_color, global_stroke_width, global_y_pos_percent)
+                    st.session_state.clips[i]['preview_path'] = p_path
+                
                 if st.session_state.clips[i].get('preview_path'):
                     st.video(st.session_state.clips[i]['preview_path'])
-        
+
         st.divider()
         if st.button("🚀 2단계: 최종 숏츠 완성하기", use_container_width=True):
             s_box = st.empty(); out_p = f"final_{int(time.time())}.mp4"

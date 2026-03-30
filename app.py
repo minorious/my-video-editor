@@ -95,12 +95,12 @@ def render_final_video(clips_data, output_path, status_box, font_path, font_size
         hd_stroke_width = stroke_width * 2
 
         for i, data in enumerate(clips_data):
-    if data.get("is_image"):
-        # 💡 이미지를 2초짜리 영상 클립으로 변환
-        clip = ImageClip(data['path']).with_duration(data['end'] - data['start']).with_fps(30)
-    else:
-        # 기존 영상 클립 처리
-        clip = VideoFileClip(data['path']).subclipped(data['start'], data['end']).with_fps(30)
+            if data.get("is_image"):
+                # 💡 이미지를 2초짜리 영상 클립으로 변환
+                clip = ImageClip(data['path']).with_duration(data['end'] - data['start']).with_fps(30)
+            else:
+                # 기존 영상 클립 처리
+                clip = VideoFileClip(data['path']).subclipped(data['start'], data['end']).with_fps(30)
             bg = ColorClip(size=(TARGET_W, TARGET_H), color=(0, 0, 0)).with_duration(clip.duration)
             w, h = clip.size
             resized = clip.resized(width=TARGET_W) if w / h > TARGET_W / TARGET_H else clip.resized(height=TARGET_H)

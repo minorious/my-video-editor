@@ -147,11 +147,9 @@ st.set_page_config(page_title="진짜 AI 숏츠 워크스테이션", layout="wid
 
 with st.sidebar:
     st.header("🔑 AI 연동 설정")
-    
-    # 💡 genai.configure 없이 딱 변수 이름만 있어야 합니다!
-    user_api_key = st.text_input("Gemini API Key를 입력하세요", type="password")
-    
-    st.caption("Google AI Studio에서 무료로 발급받은 키를 넣어주세요.")
+    # 💡 비밀 금고에서 'GEMINI_API_KEY'라는 이름의 열쇠를 꺼내오라고 명령합니다.
+    user_api_key = st.secrets["GEMINI_API_KEY"]
+    st.success("✅ 안전한 비밀 금고에서 API 키를 불러왔습니다!")
     
     st.markdown("---")
     st.header("🎨 자막 스타일 설정")

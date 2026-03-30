@@ -155,8 +155,7 @@ st.set_page_config(page_title="진짜 AI 숏츠 워크스테이션", layout="wid
 user_api_key = st.secrets["GEMINI_API_KEY"]
 
 with st.sidebar:
-    # API 관련 UI는 전부 지우고 바로 자막 설정부터 시작합니다!
-        st.header("🎨 자막 스타일 설정")
+    st.header("🎨 자막 스타일 설정")
     font_dict = {
         "기본 폰트": "myfont.ttf" # 👈 다운받아서 폴더에 넣은 폰트 이름
     }

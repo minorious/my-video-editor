@@ -1,3 +1,3 @@
 streamlit
 moviepy
-google-generativeai>=0.8.0  # 👈 최신 모델 인식을 위해 버전을 명시해 주는 것이 좋습니다.
+google-genai>=0.8.0  # 👈 최신 모델 인식을 위해 버전을 명시해 주는 것이 좋습니다.

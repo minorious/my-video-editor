@@ -160,7 +160,7 @@ with st.sidebar:
     
     st.markdown("---")
     st.subheader("📍 자막 위치")
-    global_y_pos_percent = st.slider("세로 위치 (정중앙 0%)", -45, 45, 30, format="%d%%")
+    global_y_pos_percent = st.slider("세로 위치 (정중앙 0%)", -45, 45, 0, step=1, format="%d%%")
 
 if 'clips' not in st.session_state: st.session_state.clips = []
 if 'analyzed' not in st.session_state: st.session_state.analyzed = False

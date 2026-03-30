@@ -212,7 +212,7 @@ if st.session_state.analyzed:
     col_left, col_right = st.columns([1.5, 1])
     with col_right:
         st.subheader("✂️ 순서 및 편집")
-        for i, c in enumerate(st.session_state.clips):
+for i, c in enumerate(st.session_state.clips):
     # 💡 비율을 0.2씩 공평하게 배분
     cols = st.columns([0.2, 0.2, 0.2, 1.0])
     

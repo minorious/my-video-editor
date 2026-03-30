@@ -172,7 +172,7 @@ with st.sidebar:
 if 'clips' not in st.session_state: st.session_state.clips = []
 if 'analyzed' not in st.session_state: st.session_state.analyzed = False
 
-st.title("🎬 숏츠 편집하기(Made by minorious)")
+st.title("🎬 숏츠 쉽게만들기(Made by minorious)")
 up_files = st.file_uploader("동영상 및 사진 업로드", type=["mp4", "mov", "jpg", "jpeg", "png"], accept_multiple_files=True)
 user_custom_prompt = st.text_area("🧠 AI 지시사항", value="이 영상에서 핵심 정보가 잘 전달되는 5초 이하의 구간을 찾고 요약 자막을 써줘.", height=80)
 

@@ -9,15 +9,13 @@ import json
 import google.generativeai as genai
 
 # --- 1. [핵심] 진짜 구글 Gemini AI 엔진 ---
-def analyze_video_with_gemini(video_path, api_key, status_box):
+def analyze_video_with_gemini(video_path, api_key, custom_prompt, status_box):
     try:
         status_box.info("🤖 AI가 영상을 시청하며 분석 중입니다... (약 10~30초 소요)")
         genai.configure(api_key=api_key)
         
-        # 1. 영상을 구글 AI 서버에 업로드
         video_file = genai.upload_file(path=video_path)
         
-        # 2. 업로드된 영상이 처리될 때까지 대기
         while video_file.state.name == "PROCESSING":
             time.sleep(2)
             video_file = genai.get_file(video_file.name)
@@ -25,37 +23,34 @@ def analyze_video_with_gemini(video_path, api_key, status_box):
         if video_file.state.name == "FAILED":
             raise ValueError("영상 처리 실패")
 
-        # 3. 빠르고 똑똑한 Gemini 2.5 Flash 모델 선택
-        model = genai.GenerativeModel(model_name="gemini-2.5-flash")
+        model = genai.GenerativeModel(model_name="gemini-1.5-flash")
         
-        # 4. AI에게 내릴 '프롬프트(명령어)' 작성
-        prompt = """
+        # 💡 [핵심] 파이썬이 에러 나지 않게 형식을 강제하면서, 사용자의 명령을 중간에 끼워 넣습니다!
+        prompt = f"""
         당신은 전문 유튜브 숏츠 편집자입니다. 첨부된 영상을 끝까지 시청하세요.
-        이 영상에서 가장 시선을 끄는 흥미로운 5초 이하의 하이라이트 구간을 찾으세요.
-        그리고 그 구간의 내용과 어울리는 아주 자극적이고 재미있는 숏츠용 자막(10자 내외)을 하나 작성해주세요.
+        아래 [사용자 특별 요청사항]을 가장 우선적으로 반영하여 5초 이하의 하이라이트 구간을 찾고 자막을 작성하세요.
         
-        반드시 아래의 JSON 형식으로만 대답하세요. 마크다운(```)이나 다른 설명은 절대 쓰지 마세요.
-        {
+        [사용자 특별 요청사항]
+        "{custom_prompt}"
+        
+        ---
+        🚨 [절대 규칙] 반드시 아래의 JSON 형식으로만 대답하세요. 마크다운(```)이나 다른 인사말, 설명은 절대 쓰지 마세요.
+        {{
             "start": 시작시간(초, 예: 2.5),
             "end": 종료시간(초, 예: 7.5),
-            "subtitle": "여기에 추천 자막 작성"
-        }
+            "subtitle": "여기에 요청사항을 반영한 추천 자막 작성"
+        }}
         """
         
-        # 5. 분석 실행 및 결과 받기
         response = model.generate_content([video_file, prompt])
-        
-        # 6. 사용한 영상 파일은 서버에서 삭제 (정리정돈)
         genai.delete_file(video_file.name)
         
-        # 7. AI가 준 JSON 텍스트를 파이썬 딕셔너리로 변환
         raw_text = response.text.replace("```json", "").replace("```", "").strip()
         result = json.loads(raw_text)
         
         return result
 
     except Exception as e:
-        # 💡 에러의 진짜 원인을 화면과 터미널에 띄우고 시스템을 일시정지합니다!
         error_msg = f"🚨 AI 통신 에러 발생: {e}"
         status_box.error(error_msg)
         print("===" * 10)
@@ -185,26 +180,25 @@ st.title("🎬 AI 숏츠 편집 워크스테이션 (Gemini 연동)")
 
 up_files = st.file_uploader("동영상 파일 업로드", type=["mp4", "mov"], accept_multiple_files=True)
 
+# 💡 [신규] 사용자가 프롬프트를 마음대로 수정할 수 있는 입력창 추가!
+default_prompt = "이 영상에서 가장 시선을 끄는 흥미로운 5초 이하의 하이라이트 구간을 찾고, 아주 자극적이고 재미있는 숏츠용 자막(10자 내외)을 하나 작성해 줘."
+user_custom_prompt = st.text_area("🧠 AI에게 내릴 특별한 지시사항 (프롬프트 커스텀)", value=default_prompt, height=80)
+
 if st.button("🔍 1단계: AI 자동 분석 시작"):
-    if not user_api_key:
-        st.warning("⚠️ 왼쪽 사이드바에 API Key를 먼저 입력해주세요!")
-    elif up_files:
+    if up_files:
         st.session_state.clips = []
         uid = int(time.time())
-        
-        status_box = st.empty() # 진행 상황을 보여줄 박스
+        status_box = st.empty() 
         
         for i, f in enumerate(up_files):
             tmp_p = f"temp_{uid}_{i}.mp4"
             with open(tmp_p, "wb") as out: out.write(f.getbuffer())
             
-            # 💡 [핵심] 여기서 진짜 AI 함수를 호출합니다!
-            ai_res = analyze_video_with_gemini(tmp_p, user_api_key, status_box)
+            # 💡 [핵심] 아까 만든 입력창의 내용(user_custom_prompt)을 AI 함수로 전달합니다!
+            ai_res = analyze_video_with_gemini(tmp_p, user_api_key, user_custom_prompt, status_box)
             
             with VideoFileClip(tmp_p) as v:
                 dur = v.duration
-                
-                # AI가 준 시간이 영상 길이를 넘지 않게 안전장치
                 safe_start = min(ai_res['start'], dur - 1.0)
                 safe_end = min(ai_res['end'], dur)
                 if safe_start >= safe_end: safe_start = 0.0; safe_end = min(5.0, dur)
